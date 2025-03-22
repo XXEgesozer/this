@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suç Dünyası - Third Person Oyun</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameCanvas {
+            background-color: #87CEEB;
+            display: block;
+            margin: 0 auto;
+            border: 2px solid black;
+        }
+
+        .ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: black;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #health, #money, #level, #wanted {
+            font-size: 20px;
+        }
+
+        .inventory {
+            position: absolute;
+            top: 100px;
+            left: 10px;
+            color: white;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ui">
+        <div id="health">Health: 100</div>
+        <div id="money">Money: 500</div>
+        <div id="level">Level: 1</div>
+        <div id="wanted">Wanted Level: 0</div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script>
+        // Oyuncu verisi
+        let player = {
+            health: 100,
+            money: 500,
+            x: 50,
+            y: 50,
+            width: 50,
+            height: 50,
+            speed: 5,
+            wantedLevel: 0
+        };
+
+        // Evler
+        const houses = [
+            { x: 600, y: 100, width: 60, height: 60, price: 1000, bought: false }
+        ];
+
+        // Polisler
+        const police = [
+            { x: 700, y: 200, width: 50, height: 50, speed: 2, chasing: false }
+        ];
+
+        // Banka
+        const bank = {
+            x: 400,
+            y: 300,
+            width: 100,
+            height: 100
+        };
+
+        // Canvas ve context oluştur
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Oyun objelerini çizme fonksiyonu
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);  // Ekranı temizle
+
+            // Oyuncu (mavi kare)
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Evleri çiz
+            houses.forEach(house => {
+                ctx.fillStyle = house.bought ? 'grey' : 'green';
+                ctx.fillRect(house.x, house.y, house.width, house.height);
+            });
+
+            // Polisleri çiz
+            police.forEach(p => {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(p.x, p.y, p.width, p.height);
+            });
+
+            // Bankayı çiz
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(bank.x, bank.y, bank.width, bank.height);
+
+            // UI'yi güncelle
+            document.getElementById('health').textContent = 'Health: ' + player.health;
+            document.getElementById('money').textContent = 'Money: ' + player.money;
+            document.getElementById('level').textContent = 'Level: ' + Math.floor(player.money / 500);
+            document.getElementById('wanted').textContent = 'Wanted Level: ' + player.wantedLevel;
+        }
+
+        // Oyuncu hareketi
+        function movePlayer(e) {
+            if (e.key === 'ArrowLeft') player.x -= player.speed;
+            if (e.key === 'ArrowRight') player.x += player.speed;
+            if (e.key === 'ArrowUp') player.y -= player.speed;
+            if (e.key === 'ArrowDown') player.y += player.speed;
+
+            // Ekranı yeniden çiz
+            drawGame();
+        }
+
+        // Banka Soyma
+        function robBank() {
+            if (player.x < bank.x + bank.width && player.x + player.width > bank.x && player.y < bank.y + bank.height && player.y + player.height > bank.y) {
+                if (player.wantedLevel === 0) {
+                    player.money += 500;
+                    player.wantedLevel += 1;
+                    drawGame();
+                }
+            }
+        }
+
+        // Ev Satın Alma
+        function buyHouse() {
+            houses.forEach(house => {
+                if (!house.bought && player.x < house.x + house.width && player.x + player.width > house.x && player.y < house.y + house.height && player.y + player.height > house.y) {
+                    if (player.money >= house.price) {
+                        player.money -= house.price;
+                        house.bought = true;
+                        drawGame();
+                    }
+                }
+            });
+        }
+
+        // Polislerin oyuncuya yaklaşması
+        function movePolice() {
+            police.forEach(p => {
+                if (player.wantedLevel > 0) {
+                    if (player.x < p.x) p.x -= p.speed;
+                    if (player.x > p.x) p.x += p.speed;
+                    if (player.y < p.y) p.y -= p.speed;
+                    if (player.y > p.y) p.y += p.speed;
+                }
+            });
+            drawGame();
+        }
+
+        // Tuşları dinle
+        window.addEventListener('keydown', (e) => {
+            movePlayer(e);
+            robBank();
+            buyHouse();
+            movePolice();
+        });
+
+        // Başlangıçta oyun ekranını çiz
+        drawGame();
+    </script>
+</body>
+</html>
